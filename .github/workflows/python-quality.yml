@@ -1,0 +1,27 @@
+name: Python Quality
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Unit tests
+        run: python3 -m unittest discover -s tests -v
+
+      - name: CLI smoke checks
+        run: |
+          python3 -m src.waterapps_vault.cli --help
+          python3 -m src.waterapps_vault.cli kv-write --path test/path --set k=v --mount secret || true
+
