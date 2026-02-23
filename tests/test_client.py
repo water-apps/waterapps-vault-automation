@@ -32,6 +32,14 @@ class VaultClientTests(unittest.TestCase):
         url = client.build_jwt_login_url("https://vault.example.com", auth_mount="github-jwt")
         self.assertEqual(url, "https://vault.example.com/v1/auth/github-jwt/login")
 
+    def test_rejects_non_https_non_localhost_vault_addr(self):
+        with self.assertRaises(client.VaultError):
+            client.build_kv_v2_read_url("http://vault.example.com", "secret", "x")
+
+    def test_allows_http_for_localhost_vault_addr(self):
+        url = client.build_kv_v2_read_url("http://127.0.0.1:8200", "secret", "x")
+        self.assertEqual(url, "http://127.0.0.1:8200/v1/secret/data/x")
+
     @mock.patch("src.waterapps_vault.client.urllib.request.urlopen")
     def test_jwt_login_sets_client_token(self, mock_urlopen):
         mock_urlopen.return_value = FakeResponse({"auth": {"client_token": "vault-token", "lease_duration": 3600}})
@@ -62,4 +70,3 @@ class VaultClientTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-
