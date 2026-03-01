@@ -13,6 +13,12 @@ class VaultError(RuntimeError):
 
 
 def _normalize_base_url(addr: str) -> str:
+    parsed = urllib.parse.urlparse(addr)
+    if not parsed.scheme or not parsed.netloc:
+        raise VaultError("VAULT_ADDR must be a full URL like https://vault.example.com")
+    is_loopback = parsed.hostname in {"127.0.0.1", "localhost", "::1"}
+    if parsed.scheme != "https" and not (parsed.scheme == "http" and is_loopback):
+        raise VaultError("VAULT_ADDR must use https (http is allowed only for localhost)")
     return addr.rstrip("/")
 
 
@@ -105,4 +111,3 @@ def client_from_env() -> VaultClient:
     if not addr:
         raise VaultError("VAULT_ADDR is required")
     return VaultClient(vault_addr=addr, token=token, namespace=namespace)
-

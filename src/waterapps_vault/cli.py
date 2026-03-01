@@ -2,10 +2,15 @@
 import argparse
 import json
 import os
+import re
+import shlex
 import sys
 from typing import Dict
 
 from .client import VaultError, VaultClient, client_from_env
+
+
+ENV_NAME_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 
 
 def parse_kv_pairs(pairs: list[str]) -> Dict[str, str]:
@@ -70,8 +75,11 @@ def cmd_export_env(args: argparse.Namespace) -> int:
             print(f"[WARN] Field not found, skipping: {key}", file=sys.stderr)
             continue
         env_name = args.prefix + key.upper()
-        value = str(data[key]).replace('"', '\\"')
-        print(f'export {env_name}="{value}"')
+        if not ENV_NAME_RE.match(env_name):
+            print(f"[WARN] Unsafe env var name derived from field, skipping: {env_name}", file=sys.stderr)
+            continue
+        value = shlex.quote(str(data[key]))
+        print(f"export {env_name}={value}")
     return 0
 
 
@@ -120,4 +128,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-
